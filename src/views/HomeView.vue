@@ -4,7 +4,7 @@
       <img src="@/assets/dog.png" alt="Dog Icon" class="dog-icon" />
       Im Pet
     </router-link>
-    <router-link to="/detail" class="user-button">
+    <router-link to="#" class="user-button" @click.prevent="fetchUserInfo">
       <img src="@/assets/user.png" alt="User Icon" class="user-icon" />
       <span>{{ userName }}</span>
     </router-link>
@@ -19,6 +19,8 @@
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
   data() {
     return {
@@ -32,6 +34,47 @@ export default {
       return {
         width: width, // 계산된 너비 적용
       };
+    },
+  },
+  methods: {
+    async fetchUserInfo() {
+      try {
+        const token = localStorage.getItem("accessToken");
+        if (!token) {
+          alert("로그인이 필요합니다.");
+          this.$router.replace("/login");
+          return;
+        }
+
+        const response = await axios.get(
+          "http://localhost:8080/api/v1/members",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.data.code === 0) {
+          const { email, name, phone } = response.data.data;
+
+          // 사용자 정보를 localStorage에 저장
+          localStorage.setItem("userName", name);
+          localStorage.setItem("userEmail", email);
+          localStorage.setItem("userPhone", phone);
+
+          // userName 업데이트
+          this.userName = name;
+
+          // detail 페이지로 이동
+          this.$router.push("/detail");
+        } else {
+          throw new Error("회원 정보 가져오기 실패");
+        }
+      } catch (error) {
+        console.error("사용자 정보 가져오기 실패:", error);
+        alert("사용자 정보를 불러오는 데 실패했습니다.");
+      }
     },
   },
 };
