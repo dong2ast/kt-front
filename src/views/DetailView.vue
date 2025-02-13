@@ -34,6 +34,8 @@
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
   data() {
     return {
@@ -48,8 +50,28 @@ export default {
     editInfo() {
       alert("정보 수정 기능은 추후에 구현될 예정입니다.");
     },
-    deleteAccount() {
-      alert("회원탈퇴 기능은 추후에 구현될 예정입니다.");
+    async deleteAccount() {
+      try {
+        // 로컬 스토리지에서 accessToken 가져오기
+        const token = localStorage.getItem("accessToken");
+
+        // 삭제 요청 보내기
+        const response = await axios.delete(
+          "http://localhost:8080/api/v1/members",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Authorization 헤더에 accessToken 추가
+            },
+          }
+        );
+
+        // 요청 성공 시, 로그인 페이지로 리디렉션
+        alert("회원탈퇴가 완료되었습니다.");
+        this.$router.replace("/"); // / 페이지로 리디렉션
+      } catch (error) {
+        console.error("회원탈퇴 실패:", error);
+        alert("회원탈퇴에 실패했습니다. 다시 시도해 주세요.");
+      }
     },
   },
 };
