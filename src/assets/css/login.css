@@ -1,0 +1,83 @@
+body {
+  margin: 0;
+  display: flex;
+  align-items: center; /* 수직 가운데 정렬 */
+  justify-content: center; /* 수평 가운데 정렬 */
+  height: 100vh; /* 전체 화면 높이 사용 */
+  background-color: #ffffff; /* 배경색 설정 */
+}
+
+.container {
+  margin-top: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 수평 정렬 */
+  justify-content: center; /* 수직 정렬 */
+  text-align: center; /* 텍스트 중앙 정렬 */
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 75px;
+  font-weight: bold;
+  color: #333;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  width: 400px;
+}
+
+label {
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #333;
+}
+
+input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #f0f0f0;
+  width: 200px;
+}
+
+button {
+  padding: 10px 20px;
+  margin-top: 10px;
+  background-color: #333;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 100%;
+  font-weight: bold;
+}
+
+button:hover {
+  background-color: #555;
+}
+
+.signup-button {
+  margin-top: 15px; /* 버튼 위쪽 여백 추가 */
+  padding: 10px 20px;
+  background-color: #333; /* 버튼 배경색 */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none; /* 링크 텍스트 장식 제거 */
+  width: 100%;
+  max-width: 360px; /* 버튼을 입력 필드와 동일한 폭으로 설정 */
+  text-align: center; /* 텍스트 중앙 정렬 */
+  font-weight: bold;
+  font-size: 0.8rem;
+}
+
+.signup-button:hover {
+  background-color: #555; /* 호버 색상 */
+}
