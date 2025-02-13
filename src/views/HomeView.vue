@@ -55,7 +55,6 @@ export default {
           }
         );
 
-        if (response.data.code === 0) {
           const { email, name, phone } = response.data.data;
 
           // 사용자 정보를 localStorage에 저장
@@ -68,9 +67,6 @@ export default {
 
           // detail 페이지로 이동
           this.$router.push("/detail");
-        } else {
-          throw new Error("회원 정보 가져오기 실패");
-        }
       } catch (error) {
         console.error("사용자 정보 가져오기 실패:", error);
         alert("사용자 정보를 불러오는 데 실패했습니다.");

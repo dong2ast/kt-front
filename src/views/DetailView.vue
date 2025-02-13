@@ -40,9 +40,9 @@ export default {
   data() {
     return {
       userInfo: {
-        name: "감자튀김",
-        phone: "010-1234-5678",
-        email: "test1234@gmail.com",
+        name: localStorage.getItem("userName") || "Guest",
+        phone: localStorage.getItem("userPhone") || "정보 없음",
+        email: localStorage.getItem("userEmail") || "정보 없음",
       },
     };
   },
