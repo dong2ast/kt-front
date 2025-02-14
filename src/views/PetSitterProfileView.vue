@@ -75,7 +75,7 @@
         </div>
       </div>
 
-      <div v-if="!isApproved" class="approval-notice">
+      <div v-if="!isRegister" class="approval-notice">
         <p>현재 관리자 승인 대기 중입니다.</p>
         <button @click="cancelRegistration" class="withdraw-button">펫시터 등록 취소</button>
       </div>
@@ -91,7 +91,8 @@ export default {
   setup() {
     const isApproved = ref(false);
     const isEditing = ref(false);
-    
+    const isRegister = ref(true);  // isRegister 상태를 추가
+
     const profile = reactive({
       name: '',
       location: '',
@@ -127,6 +128,9 @@ export default {
             endDate: response.data.data.endDate,
             hourlyRate: response.data.data.price
           });
+
+          // isRegister 값을 업데이트하여 관리자 승인 대기 여부를 처리
+          isRegister.value = response.data.data.isRegister;
         }
       } catch (error) {
         console.error("펫시터 프로필 불러오기 실패:", error);
@@ -151,42 +155,42 @@ export default {
     };
 
     const saveProfile = async () => {
-  if (editedProfile.startDate > editedProfile.endDate) {
-    alert('종료 날짜는 시작 날짜보다 늦어야 합니다.');
-    return;
-  }
-
-  try {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      console.error("Access token is missing.");
-      return;
-    }
-
-    const response = await axios.put("http://localhost:8080/api/v1/sitters", {
-      location: editedProfile.location,
-      species: editedProfile.petTypes,
-      startDate: editedProfile.startDate,
-      endDate: editedProfile.endDate,
-      price: editedProfile.hourlyRate
-    }, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
+      if (editedProfile.startDate > editedProfile.endDate) {
+        alert('종료 날짜는 시작 날짜보다 늦어야 합니다.');
+        return;
       }
-    });
 
-    if (response.data.code === 200) {
-      Object.assign(profile, editedProfile);
-      isEditing.value = false;
-      console.log('프로필 저장됨:', profile);
-    } else {
-      alert('프로필 저장 실패');
-    }
-  } catch (error) {
-    console.error("프로필 저장 실패:", error);
-  }
-};
+      try {
+        const token = localStorage.getItem("accessToken");
+        if (!token) {
+          console.error("Access token is missing.");
+          return;
+        }
+
+        const response = await axios.put("http://localhost:8080/api/v1/sitters", {
+          location: editedProfile.location,
+          species: editedProfile.petTypes,
+          startDate: editedProfile.startDate,
+          endDate: editedProfile.endDate,
+          price: editedProfile.hourlyRate
+        }, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.data.code === 200) {
+          Object.assign(profile, editedProfile);
+          isEditing.value = false;
+          console.log('프로필 저장됨:', profile);
+        } else {
+          alert('프로필 저장 실패');
+        }
+      } catch (error) {
+        console.error("프로필 저장 실패:", error);
+      }
+    };
 
     return {
       isApproved,
@@ -196,12 +200,12 @@ export default {
       cancelRegistration,
       startEditing,
       cancelEditing,
-      saveProfile
+      saveProfile,
+      isRegister  // isRegister를 반환하여 템플릿에서 사용할 수 있도록 함
     };
   }
 };
 </script>
-
 
 
 <style scoped>

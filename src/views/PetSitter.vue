@@ -48,7 +48,7 @@
             @click="viewServiceDetails(service.id)"
           >
             <img 
-              :src="service.image" 
+              src="@/assets/list_dog.jpeg"
               :alt="service.name"
               class="service-image"
             />
