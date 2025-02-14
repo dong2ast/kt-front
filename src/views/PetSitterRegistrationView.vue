@@ -14,10 +14,10 @@
       </div>
 
       <div class="form-group">
-        <label for="petTypes">돌봄 가능 반려동물 종류</label>
+        <label for="species">돌봄 가능 반려동물 종류</label>
         <input 
-          id="petTypes" 
-          v-model="formData.petTypes" 
+          id="species" 
+          v-model="formData.species" 
           type="text" 
           required
           placeholder="예: 강아지, 고양이"
@@ -38,7 +38,7 @@
         <label for="hourlyRate">시간당 요금 (원)</label>
         <input 
           id="hourlyRate" 
-          v-model.number="formData.hourlyRate" 
+          v-model.number="formData.price" 
           type="number" 
           required
           min="0"
@@ -61,17 +61,15 @@ export default {
     const router = useRouter();
     const formData = reactive({
       location: '',
-      species: '',
+      species: '',  // 'petTypes'를 'species'로 변경
       startDate: '',
       endDate: '',
-      price: 0
+      price: 0 // price 필드
     });
 
     const startDate = ref('');
     const endDate = ref('');
     const dateRangeError = ref('');
-    const petTypes = ref('');
-    const price = ref(0);
 
     const validateDateRange = () => {
       if (!startDate.value || !endDate.value) {
@@ -91,8 +89,6 @@ export default {
       
       formData.startDate = startDate.value;
       formData.endDate = endDate.value;
-      formData.species = petTypes.value;
-      formData.price = price.value;
 
       try {
         const token = localStorage.getItem("accessToken");
@@ -121,13 +117,12 @@ export default {
       startDate,
       endDate,
       dateRangeError,
-      petTypes,
-      price,
       submitForm
     };
   }
 };
 </script>
+
 
 
 

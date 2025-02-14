@@ -13,20 +13,24 @@
         <div class="info">
           <div class="info-item">
             <label>이름</label>
-            <span>{{ userInfo.name }}</span>
+            <span v-if="!isEditing">{{ userInfo.name }}</span>
+            <input v-else v-model="editData.name" type="text" />
           </div>
           <div class="info-item">
             <label>전화번호</label>
-            <span>{{ userInfo.phone }}</span>
+            <span v-if="!isEditing">{{ userInfo.phone }}</span>
+            <input v-else v-model="editData.phone" type="text" />
           </div>
           <div class="info-item">
             <label>이메일</label>
-            <span>{{ userInfo.email }}</span>
+            <span>{{ userInfo.email }}</span> 
+            <!-- 이메일은 수정 불가 -->
           </div>
         </div>
       </div>
       <div class="button-container">
-        <button class="button edit" @click="editInfo">수정</button>
+        <button v-if="!isEditing" class="button edit" @click="startEdit">수정</button>
+        <button v-else class="button save" @click="saveEdit">완료</button>
         <button class="button delete" @click="deleteAccount">회원탈퇴</button>
       </div>
     </div>
@@ -39,35 +43,77 @@ import axios from "axios";
 export default {
   data() {
     return {
+      isEditing: false, // 수정 모드 여부
       userInfo: {
         name: localStorage.getItem("userName") || "Guest",
         phone: localStorage.getItem("userPhone") || "정보 없음",
         email: localStorage.getItem("userEmail") || "정보 없음",
       },
+      editData: {
+        name: "", // 수정할 이름
+        phone: "", // 수정할 전화번호
+      },
     };
   },
   methods: {
-    editInfo() {
-      alert("정보 수정 기능은 추후에 구현될 예정입니다.");
+    startEdit() {
+      // 수정 버튼 클릭 시 기존 데이터를 입력 필드에 채움
+      this.editData.name = this.userInfo.name;
+      this.editData.phone = this.userInfo.phone;
+      this.isEditing = true;
     },
-    async deleteAccount() {
+    async saveEdit() {
       try {
-        // 로컬 스토리지에서 accessToken 가져오기
         const token = localStorage.getItem("accessToken");
 
-        // 삭제 요청 보내기
-        const response = await axios.delete(
+        // PUT 요청 보내기
+        const response = await axios.put(
           "http://localhost:8080/api/v1/members",
           {
+            name: this.editData.name,
+            phone: this.editData.phone,
+          },
+          {
             headers: {
-              Authorization: `Bearer ${token}`, // Authorization 헤더에 accessToken 추가
+              Authorization: `Bearer ${token}`,
             },
           }
         );
 
-        // 요청 성공 시, 로그인 페이지로 리디렉션
+        // 성공적으로 변경되었을 경우 UI 업데이트
+        if (response.data.code === 200) {
+
+          // localStorage 업데이트
+          localStorage.setItem("userName", this.editData.name);
+          localStorage.setItem("userPhone", this.editData.phone);
+
+          // UI 업데이트
+          this.userInfo.name = this.editData.name;
+          this.userInfo.phone = this.editData.phone;
+          this.isEditing = false;
+        } else {
+          alert("정보 수정에 실패했습니다.");
+        }
+      } catch (error) {
+        console.error("정보 수정 실패:", error);
+        alert("정보 수정 중 오류가 발생했습니다.");
+      }
+    },
+    async deleteAccount() {
+      try {
+        const token = localStorage.getItem("accessToken");
+
+        const response = await axios.delete(
+          "http://localhost:8080/api/v1/members",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
         alert("회원탈퇴가 완료되었습니다.");
-        this.$router.replace("/"); // / 페이지로 리디렉션
+        this.$router.replace("/");
       } catch (error) {
         console.error("회원탈퇴 실패:", error);
         alert("회원탈퇴에 실패했습니다. 다시 시도해 주세요.");
@@ -87,10 +133,10 @@ export default {
 body {
   margin: 0;
   display: flex;
-  align-items: center; /* 수직 가운데 정렬 */
-  justify-content: center; /* 수평 가운데 정렬 */
-  height: 100vh; /* 전체 화면 높이 사용 */
-  background-color: #ffffff; /* 배경색 설정 */
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #ffffff;
 }
 
 header {
@@ -102,7 +148,7 @@ header {
 }
 
 .logo {
-  width: 50px; /* 로고 크기 조절 */
+  width: 50px;
   height: auto;
   margin-right: 10px;
 }
@@ -145,9 +191,9 @@ h2 {
 }
 
 .container {
-  max-width: 1200px; /* 전체 너비 제한 */
+  max-width: 1200px;
   width: 100%;
-  margin: 0 auto; /* 가운데 정렬 */
+  margin: 0 auto;
   padding: 20px;
   background-color: #fff;
   border-radius: 10px;
@@ -183,21 +229,27 @@ h2 {
   font-weight: bold;
 }
 
+input {
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
 .button-container {
   margin-top: 20px;
   display: flex;
-  justify-content: right; /* 버튼 중앙 정렬 */
+  justify-content: right;
   gap: 10px;
 }
 
 .button {
   padding: 10px 20px;
-  background-color: #333; /* 버튼 배경색 */
+  background-color: #333;
   color: white;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  text-align: center; /* 텍스트 중앙 정렬 */
+  text-align: center;
   font-weight: bold;
   font-size: 16px;
   transition: background-color 0.3s ease;
@@ -205,5 +257,13 @@ h2 {
 
 .button:hover {
   background-color: #aaa;
+}
+
+.save {
+  background-color: #007bff;
+}
+
+.save:hover {
+  background-color: #0056b3;
 }
 </style>
