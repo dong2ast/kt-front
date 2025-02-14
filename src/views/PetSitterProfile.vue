@@ -193,6 +193,57 @@
         }
       };
 
+      const startEditing = () => {
+        isEditing.value = true;
+        Object.assign(editedProfile, profile);
+      };
+
+      const cancelEditing = () => {
+        isEditing.value = false;
+      };
+
+      const saveProfile = async () => {
+        if (editedProfile.startDate > editedProfile.endDate) {
+          alert("종료 날짜는 시작 날짜보다 늦어야 합니다.");
+          return;
+        }
+
+        try {
+          const token = localStorage.getItem("accessToken");
+          if (!token) {
+            console.error("Access token is missing.");
+            return;
+          }
+
+          const response = await axios.put(
+            "http://localhost:8080/api/v1/sitters",
+            {
+              location: editedProfile.location,
+              species: editedProfile.petTypes,
+              startDate: editedProfile.startDate,
+              endDate: editedProfile.endDate,
+              price: editedProfile.hourlyRate,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (response.data.code === 200) {
+            Object.assign(profile, editedProfile);
+            isEditing.value = false;
+            console.log("프로필 저장됨:", profile);
+          } else {
+            alert("프로필 저장 실패");
+          }
+        } catch (error) {
+          console.error("프로필 저장 실패:", error);
+        }
+      };
+
       return {
         isEditing,
         profile,
@@ -200,6 +251,9 @@
         fetchProfile,
         withdrawSitter,
         isRegister,
+        startEditing,
+        cancelEditing,
+        saveProfile,
       };
     },
   };
