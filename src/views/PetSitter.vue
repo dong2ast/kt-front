@@ -2,7 +2,7 @@
   <div class="pet-sitter-container">
     <!-- Header with Logo -->
     <header class="header">
-      <router-link to="/home" class="title-link">
+      <router-link to="/sitter" class="title-link">
         <img src="@/assets/dog.png" alt="Dog Icon" class="dog-icon" />
         Im Pet
       </router-link>
@@ -21,13 +21,16 @@
           <button @click="navigateToProfile" class="square-button">
             프로필 관리
           </button>
-          <button @click="navigateToServiceRegistration" class="square-button">
-            서비스 등록
+          <button @click="navigateToMyServices" class="square-button">
+            내 서비스 목록
           </button>
         </template>
         <template v-else>
           <button @click="registerAsPetSitter" class="square-button">
             펫시터 등록
+          </button>
+          <button @click="navigateToRequestList" class="square-button">
+            요청 목록
           </button>
         </template>
       </div>
@@ -63,7 +66,7 @@
   export default {
     setup() {
       const router = useRouter();
-      const isPetSitter = ref(false); // Changed to false for demonstration
+      const isPetSitter = ref(false);
       const sitterServices = ref([
         {
           id: 1,
@@ -87,6 +90,7 @@
             "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Group%2023-GU4lkUGhAgTLgfItZi61xbUCPy6THy.png",
         },
       ]);
+
       onMounted(async () => {
         try {
           const token = localStorage.getItem("accessToken");
@@ -116,24 +120,29 @@
         router.push("/sitter/profile");
       };
 
-      const navigateToServiceRegistration = () => {
-        console.log("서비스 등록으로 이동");
+      const navigateToMyServices = () => {
+        router.push("/sitter/my-services");
       };
 
       const registerAsPetSitter = () => {
         router.push("/sitter/registration");
       };
 
+      const navigateToRequestList = () => {
+        router.push("/sitter/request/user");
+      };
+
       const viewServiceDetails = (serviceId) => {
-        console.log("서비스 상세 보기:", serviceId);
+        router.push(`/services/${serviceId}`);
       };
 
       return {
         isPetSitter,
         sitterServices,
         navigateToProfile,
-        navigateToServiceRegistration,
+        navigateToMyServices,
         registerAsPetSitter,
+        navigateToRequestList,
         viewServiceDetails,
       };
     },
