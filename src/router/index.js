@@ -7,6 +7,7 @@ import PetSitter from "@/views/PetSitter.vue";
 import PetSitterRegistration from "@/views/PetSitterRegistration.vue";
 import PetSitterProfile from "@/views/PetSitterProfile.vue";
 import PaymentsTest from "@/views/PaymentsTest.vue";
+import CodeManagement from "@/views/CodeManagement.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -50,6 +51,11 @@ const router = createRouter({
       path: "/payments",
       name: "payments",
       component: PaymentsTest,
+    },
+    {
+      path: "/codes",
+      name: "codes",
+      component: CodeManagement,
     },
   ],
 });
