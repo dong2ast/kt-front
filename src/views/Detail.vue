@@ -33,6 +33,7 @@
           수정
         </button>
         <button v-else class="button save" @click="saveEdit">완료</button>
+        <button class="button logout" @click="logout">로그아웃</button>
         <button class="button delete" @click="deleteAccount">회원탈퇴</button>
       </div>
     </div>
@@ -118,6 +119,33 @@
         } catch (error) {
           console.error("회원탈퇴 실패:", error);
           alert("회원탈퇴에 실패했습니다. 다시 시도해 주세요.");
+        }
+      },
+      async logout() {
+        try {
+          const token = localStorage.getItem("accessToken");
+
+          await axios.post(
+            "http://localhost:8080/api/v1/members/logout",
+            {},
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          // localStorage 데이터 삭제
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("userName");
+          localStorage.removeItem("userPhone");
+          localStorage.removeItem("userEmail");
+
+          alert("로그아웃 되었습니다.");
+          this.$router.replace("/");
+        } catch (error) {
+          console.error("로그아웃 실패:", error);
+          alert("로그아웃에 실패했습니다. 다시 시도해 주세요.");
         }
       },
     },
@@ -266,5 +294,13 @@
 
   .save:hover {
     background-color: #0056b3;
+  }
+
+  .button.delete {
+    background-color: #ff5733;
+  }
+
+  .button.delete:hover {
+    background-color: #cc4626;
   }
 </style>
