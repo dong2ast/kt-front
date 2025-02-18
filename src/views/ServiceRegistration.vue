@@ -50,8 +50,8 @@
             type="number"
             v-model.number="rate"
             required
-            min="0"
-            step="1000"
+            min="100"
+            step="100"
           />
         </div>
 
@@ -168,6 +168,12 @@
         if (!hasSchedule) {
           alert("최소 하나의 가능 일정을 입력해주세요.");
           return false;
+        }
+        for (const [day, { start, end }] of Object.entries(schedule)) {
+          if (start && end && start >= end) {
+            alert(`${day}의 시작 시간이 종료 시간보다 빠를 수 없습니다.`);
+            return false;
+          }
         }
         return true;
       };
