@@ -2,7 +2,7 @@
   <div class="pet-sitter-container">
     <!-- Header with Logo -->
     <header class="header">
-      <router-link to="/sitter" class="title-link">
+      <router-link to="/home" class="title-link">
         <img src="@/assets/dog.png" alt="Dog Icon" class="dog-icon" />
         Im Pet
       </router-link>
@@ -67,92 +67,15 @@
     setup() {
       const router = useRouter();
       const isPetSitter = ref(false);
-      const sitterServices = ref([
-        {
-          id: 1,
-          name: "강아지 산책",
-          price: 25000,
-          image:
-            "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Group%2023-GU4lkUGhAgTLgfItZi61xbUCPy6THy.png",
-        },
-        {
-          id: 2,
-          name: "방문 돌봄",
-          price: 40000,
-          image:
-            "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Group%2023-GU4lkUGhAgTLgfItZi61xbUCPy6THy.png",
-        },
-        {
-          id: 3,
-          name: "장기 돌봄",
-          price: 35000,
-          image:
-            "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Group%2023-GU4lkUGhAgTLgfItZi61xbUCPy6THy.png",
-        },
-      ]);
+      const sitterServices = ref([]);
 
-      onMounted(async () => {
-        try {
-          const token = localStorage.getItem("accessToken");
-          if (!token) {
-            console.error("Access token is missing.");
-            return;
-          }
-
-          const response = await axios.get(
-            "http://localhost:8080/api/v1/sitters",
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-
-          if (response.data.code === 200) {
-            isPetSitter.value = response.data.data.isSitter;
-          }
-        } catch (error) {
-          console.error("펫시터 정보 가져오기 실패:", error);
-        }
-      });
-
-      const navigateToProfile = () => {
-        router.push("/sitter/profile");
-      };
-
-      const navigateToMyServices = () => {
-        router.push("/sitter/my-services");
-      };
-
-      const registerAsPetSitter = () => {
-        router.push("/sitter/registration");
-      };
-
-      const navigateToRequestList = () => {
-        router.push("/sitter/request/user");
-      };
-
-      const viewServiceDetails = (serviceId) => {
-        router.push(`/services/${serviceId}`);
-      };
-
-      return {
-        isPetSitter,
-        sitterServices,
-        navigateToProfile,
-        navigateToMyServices,
-        registerAsPetSitter,
-        navigateToRequestList,
-        viewServiceDetails,
-      };
-    },
-    methods: {
-      async fetchUserInfo() {
+      // 사용자 정보 가져오기
+      const fetchUserInfo = async () => {
         try {
           const token = localStorage.getItem("accessToken");
           if (!token) {
             alert("로그인이 필요합니다.");
-            this.$router.replace("/login");
+            router.replace("/login");
             return;
           }
 
@@ -172,16 +95,80 @@
           localStorage.setItem("userEmail", email);
           localStorage.setItem("userPhone", phone);
 
-          // userName 업데이트
-          this.userName = name;
-
           // detail 페이지로 이동
-          this.$router.push("/detail");
+          router.push("/detail");
         } catch (error) {
           console.error("사용자 정보 가져오기 실패:", error);
           alert("사용자 정보를 불러오는 데 실패했습니다.");
         }
-      },
+      };
+
+      // 펫시터 및 서비스 리스트 가져오기
+      onMounted(async () => {
+        try {
+          const token = localStorage.getItem("accessToken");
+          if (!token) {
+            console.error("Access token is missing.");
+            return;
+          }
+
+          const response = await axios.get(
+            "http://localhost:8080/api/v1/sitters",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (response.data.code === 200) {
+            const data = response.data.data;
+            isPetSitter.value = data.isSitter;
+            sitterServices.value = data.sitterServiceResponseDtos.map(
+              (service) => ({
+                id: service.id,
+                name: service.species, // 기존 name이 없으므로 species 사용
+                price: service.price,
+                image: service.image,
+              })
+            );
+          }
+        } catch (error) {
+          console.error("펫시터 정보 가져오기 실패:", error);
+        }
+      });
+
+      // 페이지 이동 함수
+      const navigateToProfile = () => {
+        router.push("/sitter/profile");
+      };
+
+      const navigateToMyServices = () => {
+        router.push("/sitter/my-services");
+      };
+
+      const registerAsPetSitter = () => {
+        router.push("/sitter/registration");
+      };
+
+      const navigateToRequestList = () => {
+        router.push("/sitter/request/user");
+      };
+
+      const viewServiceDetails = (serviceId) => {
+        router.push(`/sitter/services/${serviceId}`);
+      };
+
+      return {
+        isPetSitter,
+        sitterServices,
+        fetchUserInfo,
+        navigateToProfile,
+        navigateToMyServices,
+        registerAsPetSitter,
+        navigateToRequestList,
+        viewServiceDetails,
+      };
     },
   };
 </script>
@@ -262,7 +249,7 @@
 
   .services-list {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(3, 1fr); /* 3개의 컬럼으로 고정 */
     gap: 2rem;
     padding: 1rem;
   }
