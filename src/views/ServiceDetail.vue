@@ -114,6 +114,11 @@
                 등록 취소
               </button>
             </template>
+            <template v-else>
+              <button @click="onPayment" class="action-button">
+                예약 요청
+              </button>
+            </template>
           </div>
         </div>
       </div>
@@ -122,373 +127,463 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted } from "vue";
-import axios from "axios";
-import { useRoute, useRouter } from "vue-router";
+  import { ref, reactive, onMounted } from "vue";
+  import axios from "axios";
+  import { useRoute, useRouter } from "vue-router";
 
-export default {
-  setup() {
-    const daysOfWeek = [
-      "월요일",
-      "화요일",
-      "수요일",
-      "목요일",
-      "금요일",
-      "토요일",
-      "일요일",
-    ];
+  export default {
+    setup() {
+      const daysOfWeek = [
+        "월요일",
+        "화요일",
+        "수요일",
+        "목요일",
+        "금요일",
+        "토요일",
+        "일요일",
+      ];
 
-    const route = useRoute();
-    const router = useRouter();
-    const isEditing = ref(false);
-    const isOwner = ref(true); // 본인이 작성한 서비스인지 확인 (임시)
+      const route = useRoute();
+      const router = useRouter();
+      const isEditing = ref(false);
+      const isOwner = ref(false); // 본인이 작성한 서비스인지 확인 (임시)
 
-    const service = reactive({
-      id: null,
-      location: "",
-      species: "",
-      price: 0,
-      schedule: [],
-      image: "",
-    });
+      const service = reactive({
+        id: null,
+        location: "",
+        species: "",
+        price: 0,
+        schedule: [],
+        image: "",
+      });
 
-    const editedService = reactive({ ...service });
+      const editedService = reactive({ ...service });
 
-    // JWT 토큰 가져오는 함수
-    const getToken = () => localStorage.getItem("accessToken");
+      // JWT 토큰 가져오는 함수
+      const getToken = () => localStorage.getItem("accessToken");
 
-    // 서비스 데이터 불러오기 (Authorization 헤더 추가)
-    const fetchService = async () => {
-      try {
-        const token = getToken();
-        if (!token) {
-          alert("로그인이 필요합니다.");
-          return;
-        }
-
-        const response = await axios.get(
-          `http://localhost:8080/api/v1/sitters/services/${route.params.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+      // 서비스 데이터 불러오기 (Authorization 헤더 추가)
+      const fetchService = async () => {
+        try {
+          const token = getToken();
+          if (!token) {
+            alert("로그인이 필요합니다.");
+            return;
           }
-        );
 
-        if (response.data.code === 200) {
-          Object.assign(service, response.data.data);
-          Object.assign(editedService, response.data.data);
+          const response = await axios.get(
+            `http://localhost:8080/api/v1/sitters/services/${route.params.id}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (response.data.code === 200) {
+            Object.assign(service, response.data.data);
+            Object.assign(editedService, response.data.data);
+
+            isOwner.value = response.data.data.isOwner;
+          }
+        } catch (error) {
+          console.error("서비스 불러오기 실패:", error);
         }
-      } catch (error) {
-        console.error("서비스 불러오기 실패:", error);
-      }
-    };
+      };
 
-    // 페이지 로드 시 서비스 데이터 가져오기
-    onMounted(fetchService);
+      const onPayment = () => {
+        const { IMP } = window;
+        IMP.init("imp01228024");
 
-    const startEditing = () => {
-      isEditing.value = true;
-      Object.assign(editedService, service);
-    };
-
-    const cancelEdit = () => {
-      isEditing.value = false;
-    };
-
-    // 서비스 수정 요청 (DTO에 맞게 수정)
-    const saveEdit = async () => {
-      try {
-        const token = getToken();
-        if (!token) {
-          alert("로그인이 필요합니다.");
-          return;
-        }
-
-        // 요청 데이터 DTO 맞춤 변환
-        const requestData = {
-          id: editedService.id,
-          location: editedService.location,
-          species: editedService.species,
-          price: editedService.price,
-          schedule: editedService.schedule.map((time) => ({
-            day: time.day,
-            startTime: time.startTime,
-            endTime: time.endTime,
-          })),
+        const data = {
+          pg: "uplus",
+          pay_method: "card",
+          merchant_uid: `mid_${new Date().getTime()}`,
+          amount: service.price,
+          name: service.name,
+          buyer_name: "홍길동",
+          buyer_tel: "01012341234",
+          buyer_email: "jeola326@gmail.com",
+          buyer_addr: "서울시 강남구",
+          buyer_postcode: "06018",
         };
 
-        const response = await axios.put(
-          `http://localhost:8080/api/v1/sitters/services`,
-          requestData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+        IMP.request_pay(data, callback);
+      };
+
+      const callback = async (response) => {
+        if (response.success) {
+          alert("결제 성공");
+          const token = getToken();
+          if (!token) {
+            alert("로그인이 필요합니다.");
+            return;
           }
-        );
-
-        if (response.data.code === 200) {
-          Object.assign(service, editedService);
-          isEditing.value = false;
-          alert("수정이 완료되었습니다.");
+          try {
+            response = await axios.post(
+              `http://localhost:8080/api/v1/sitters/services/${service.id}`,
+              {}, // 필요한 데이터가 있으면 여기에 추가
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+            if (response.data.code === 201) {
+              alert("예약 요청이 성공하였습니다.");
+              router.push("/sitter");
+            } else {
+              alert("예약 요청 실패");
+            }
+          } catch (error) {
+            alert("예약 요청 실패");
+            console.error("예약 요청 오류:", error);
+          }
         } else {
-          alert("수정 실패");
+          alert(`결제 실패: ${response.error_msg}`);
         }
-      } catch (error) {
-        console.error("수정 실패:", error);
-        alert("수정 중 오류가 발생했습니다.");
-      }
-    };
+      };
 
-    // 서비스 등록 취소 요청 (DELETE 요청)
-    const cancelService = async () => {
-      try {
-        const token = getToken();
-        if (!token) {
-          alert("로그인이 필요합니다.");
+      // 페이지 로드 시 서비스 데이터 가져오기
+      onMounted(fetchService);
+
+      const startEditing = () => {
+        isEditing.value = true;
+        Object.assign(editedService, service);
+      };
+
+      const cancelEdit = () => {
+        isEditing.value = false;
+      };
+
+      // 서비스 수정 요청 (DTO에 맞게 수정)
+      const saveEdit = async () => {
+        if (!validateEditForm()) {
           return;
         }
-
-        const response = await axios.delete(
-          `http://localhost:8080/api/v1/sitters/services/${service.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+        try {
+          const token = getToken();
+          if (!token) {
+            alert("로그인이 필요합니다.");
+            return;
           }
-        );
 
-        if (response.data.code === 204) {
-          alert("서비스 등록이 취소되었습니다.");
-          router.push("/sitter/my-services");
-        } else {
-          alert("서비스 등록 취소 실패");
+          // 요청 데이터 DTO 맞춤 변환
+          const requestData = {
+            id: editedService.id,
+            location: editedService.location,
+            species: editedService.species,
+            price: editedService.price,
+            schedule: editedService.schedule.map((time) => ({
+              day: time.day,
+              startTime: time.startTime,
+              endTime: time.endTime,
+            })),
+          };
+
+          const response = await axios.put(
+            `http://localhost:8080/api/v1/sitters/services`,
+            requestData,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (response.data.code === 200) {
+            Object.assign(service, editedService);
+            isEditing.value = false;
+            alert("수정이 완료되었습니다.");
+          } else {
+            alert("수정 실패");
+          }
+        } catch (error) {
+          console.error("수정 실패:", error);
+          alert("수정 중 오류가 발생했습니다.");
         }
-      } catch (error) {
-        console.error("서비스 등록 취소 실패:", error);
-        alert("서비스 등록 취소 중 오류가 발생했습니다.");
-      }
-    };
+      };
 
-    return {
-      service,
-      editedService,
-      isEditing,
-      isOwner,
-      startEditing,
-      cancelEdit,
-      saveEdit,
-      cancelService,
-      daysOfWeek,
-    };
-  },
-};
+      // 서비스 등록 취소 요청 (DELETE 요청)
+      const cancelService = async () => {
+        try {
+          const token = getToken();
+          if (!token) {
+            alert("로그인이 필요합니다.");
+            return;
+          }
+
+          const response = await axios.delete(
+            `http://localhost:8080/api/v1/sitters/services/${service.id}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (response.data.code === 204) {
+            alert("서비스 등록이 취소되었습니다.");
+            router.push("/sitter/my-services");
+          } else {
+            alert("서비스 등록 취소 실패");
+          }
+        } catch (error) {
+          console.error("서비스 등록 취소 실패:", error);
+          alert("서비스 등록 취소 중 오류가 발생했습니다.");
+        }
+      };
+
+      // 서비스 수정 전 유효성 검사 함수
+      const validateEditForm = () => {
+        // 예시 유효성 검사: location, species, price, schedule
+        if (!editedService.location) {
+          alert("위치 정보를 입력해주세요.");
+          return false;
+        }
+        if (!editedService.species) {
+          alert("종류 정보를 입력해주세요.");
+          return false;
+        }
+        if (editedService.price <= 0) {
+          alert("가격은 0보다 큰 값이어야 합니다.");
+          return false;
+        }
+
+        // schedule 유효성 검사
+        const invalidSchedule = editedService.schedule.find(
+          ({ startTime, endTime }) =>
+            startTime && endTime && startTime >= endTime
+        );
+        if (invalidSchedule) {
+          alert(
+            `${invalidSchedule.day}의 시작 시간이 종료 시간보다 빠를 수 없습니다.`
+          );
+          return false;
+        }
+
+        return true;
+      };
+
+      return {
+        service,
+        editedService,
+        isEditing,
+        isOwner,
+        startEditing,
+        cancelEdit,
+        saveEdit,
+        cancelService,
+        daysOfWeek,
+        onPayment,
+      };
+    },
+  };
 </script>
 
 <style scoped>
-.service-detail-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-}
+  .service-detail-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 3rem;
-}
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3rem;
+  }
 
-.title-link {
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: #333;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-}
+  .title-link {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #333;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+  }
 
-.dog-icon {
-  height: 40px;
-  margin-right: 1rem;
-}
+  .dog-icon {
+    height: 40px;
+    margin-right: 1rem;
+  }
 
-.user-icon {
-  width: 40px;
-  height: 40px;
-  background-color: #f0f0f0;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  color: #333;
-}
+  .user-icon {
+    width: 40px;
+    height: 40px;
+    background-color: #f0f0f0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #333;
+  }
 
-.service-detail {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3rem;
-  align-items: start;
-}
-
-.service-image {
-  width: 100%;
-  height: 400px;
-  object-fit: cover;
-  border-radius: 8px;
-}
-
-.service-title {
-  font-size: 2rem;
-  margin-bottom: 2rem;
-}
-
-.info-grid {
-  display: grid;
-  gap: 2rem;
-}
-
-.info-item h3 {
-  font-size: 1.1rem;
-  margin-bottom: 0.5rem;
-}
-
-.info-item p {
-  background-color: #f0f0f0;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-}
-
-.time-list {
-  list-style: none;
-  padding: 0;
-  background-color: #f0f0f0;
-  border-radius: 8px;
-}
-
-.time-list li {
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.time-list li:last-child {
-  border-bottom: none;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.action-button {
-  padding: 0.75rem 2rem;
-  border: none;
-  border-radius: 8px;
-  background-color: #000;
-  color: white;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.action-button.cancel {
-  background-color: #dc3545;
-}
-
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.modal-content {
-  background-color: white;
-  padding: 2rem;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 500px;
-}
-
-.request-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.form-group label {
-  font-weight: bold;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.modal-buttons {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-@media (max-width: 768px) {
   .service-detail {
-    grid-template-columns: 1fr;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: start;
   }
 
   .service-image {
-    height: 300px;
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+
+  .service-title {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .info-grid {
+    display: grid;
+    gap: 2rem;
+  }
+
+  .info-item h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .info-item p {
+    background-color: #f0f0f0;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+  }
+
+  .time-list {
+    list-style: none;
+    padding: 0;
+    background-color: #f0f0f0;
+    border-radius: 8px;
+  }
+
+  .time-list li {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .time-list li:last-child {
+    border-bottom: none;
   }
 
   .action-buttons {
-    flex-direction: column;
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
   }
 
   .action-button {
-    width: 100%;
+    padding: 0.75rem 2rem;
+    border: none;
+    border-radius: 8px;
+    background-color: #000;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
   }
-}
 
-.edit-input {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
+  .action-button.cancel {
+    background-color: #dc3545;
+  }
 
-.edit-input {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 
-.time-list {
-  display: flex;
-  flex-direction: column;
-}
+  .modal-content {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+  }
 
-.time-list input {
-  margin-bottom: 1rem;
-}
+  .request-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .form-group label {
+    font-weight: bold;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+
+  .modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .service-detail {
+      grid-template-columns: 1fr;
+    }
+
+    .service-image {
+      height: 300px;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+    }
+
+    .action-button {
+      width: 100%;
+    }
+  }
+
+  .edit-input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+
+  .edit-input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+
+  .time-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .time-list input {
+    margin-bottom: 1rem;
+  }
 </style>
